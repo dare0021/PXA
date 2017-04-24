@@ -13,7 +13,6 @@ import android.util.Log;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  * Created by jkih on 2017-04-24.
@@ -25,8 +24,16 @@ public class Mic
     private static final int CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     private static final int SOURCE = MediaRecorder.AudioSource.MIC;
-    // 16 bits is 2 bytes * sampling rate * 3 seconds
-    private static final int BUFFER_SIZE = 2 * SAMPLING_RATE * 3;
+    // 16 bits is 1 channel * 2 bytes * sampling rate * 1 second per update max acceptable latency
+    private static final int BUFFER_SIZE = 2 * SAMPLING_RATE;
+    // seconds to collect for querying. Querying done very second regardless.
+    private static final int UPDATE_INTERVAL = 3;
+
+    private RecordingThread thread = null;
+    private boolean recording = false;
+    private byte[][] rec_buff = new byte[UPDATE_INTERVAL][BUFFER_SIZE * UPDATE_INTERVAL];
+    private byte rec_buff_head = 0;
+    private int rec_buff_pointer = 0;
 
     public Mic (Activity caller)
     {
@@ -39,47 +46,70 @@ public class Mic
 
     public boolean record()
     {
+        recording = true;
+
         String path = Environment.getExternalStorageDirectory().getPath() + "/fakepath.pcm";
         // logic for an actual path instead of fakepath
 
         // if we leave as is OS might garbage collect this before the 3 secs is up
-        Thread t = new RecordingThread(path, newRec());
+        thread = new RecordingThread();
 
         // some testing code here, return false if fail
         return true;
     }
 
-    private AudioRecord newRec()
+    public void stop()
     {
-        return new AudioRecord(SOURCE, SAMPLING_RATE, CHANNELS, ENCODING, BUFFER_SIZE);
+        recording = false;
+    }
+
+    private void saveFile()
+    {
+        FileOutputStream fos = null;
+        try
+        {
+            // what if overwrite is literally that and doesn't delete the previous file first?
+            // the file size will be the same anyway since this is uncompressed
+            fos = new FileOutputStream(path, false);
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        // pop head and push empty
+        // upload head
     }
 
     private class RecordingThread extends Thread
     {
-        private String path;
         private AudioRecord rec;
+        private byte[] read_buff = new byte[BUFFER_SIZE];
+        private int read_buff_pointer = 0;
 
-        public RecordingThread(String savePath, AudioRecord rec)
+        public RecordingThread()
         {
-            path = savePath;
-            this.rec = rec;
+            this.rec = new AudioRecord(SOURCE, SAMPLING_RATE, CHANNELS, ENCODING, BUFFER_SIZE);
         }
 
         @Override
         public void run()
         {
-            FileOutputStream fos = null;
-            try
+            while(recording)
             {
-                // what if overwrite is literally that and doesn't delete the previous file first?
-                // the file size will be the same anyway since this is uncompressed
-                fos = new FileOutputStream(path, false);
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-            }
+                read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
+                assert read_buff_pointer <= BUFFER_SIZE;
 
+                if (read_buff_pointer >= BUFFER_SIZE)
+                {
+                    for (byte i = 0; i < UPDATE_INTERVAL; i++)
+                    {
+                        int buff_offset = (UPDATE_INTERVAL - 1 - i) * BUFFER_SIZE;
+                        System.arraycopy(read_buff, 0, rec_buff[i], buff_offset, BUFFER_SIZE);
+                    }
+                    read_buff_pointer = 0;
+                    saveFile();
+                }
+            }
         }
     }
 }
