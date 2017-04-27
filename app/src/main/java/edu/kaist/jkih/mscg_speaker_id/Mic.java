@@ -2,20 +2,25 @@ package edu.kaist.jkih.mscg_speaker_id;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Created by jkih on 2017-04-24.
+ * should be rebuilt as a service at some point
  */
 
 public class Mic
@@ -29,11 +34,17 @@ public class Mic
     // seconds to collect for querying. Querying done very second regardless.
     private static final int UPDATE_INTERVAL = 3;
 
+    private enum RecordingMode
+    {
+        CONTINUOUS, ONE_OFF
+    }
+    private RecordingMode recmode = RecordingMode.ONE_OFF;
+
     private RecordingThread thread = null;
     private boolean recording = false;
     private byte[][] rec_buff = new byte[UPDATE_INTERVAL][BUFFER_SIZE * UPDATE_INTERVAL];
-    private byte rec_buff_head = 0;
-    private int rec_buff_pointer = 0;
+    private int rec_buff_head = 0;
+    private Activity caller;
 
     public Mic (Activity caller)
     {
@@ -42,6 +53,7 @@ public class Mic
         PermissionRequest.request(caller, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         PermissionRequest.request(caller, Manifest.permission.WAKE_LOCK);
         PermissionRequest.request(caller, Manifest.permission.INTERNET);
+        this.caller = caller;
     }
 
     public boolean record()
@@ -53,6 +65,7 @@ public class Mic
 
         // if we leave as is OS might garbage collect this before the 3 secs is up
         thread = new RecordingThread();
+        thread.run();
 
         // some testing code here, return false if fail
         return true;
@@ -63,21 +76,101 @@ public class Mic
         recording = false;
     }
 
-    private void saveFile()
+    /**
+     *
+     * @return whether successful. e.g. no internet means fail
+     */
+    private boolean saveFile()
     {
-        FileOutputStream fos = null;
-        try
+        Log.d("OUT", "saving");
+        boolean retval = false;
+
+        byte[] header = new byte[44];
+        int totalAudioLen = BUFFER_SIZE * UPDATE_INTERVAL;
+        int totalDataLen = totalAudioLen + 36;
+        int byteRate = SAMPLING_RATE * 16 / 8;
+
+        header[0] = 'R';  // RIFF/WAVE header
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';  // 'fmt ' chunk
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;  // format = 1
+        header[21] = 0;
+        header[22] = (byte) 1; // # of channels
+        header[23] = 0;
+        header[24] = (byte) (SAMPLING_RATE & 0xff);
+        header[25] = (byte) ((SAMPLING_RATE>> 8) & 0xff);
+        header[26] = (byte) ((SAMPLING_RATE >> 16) & 0xff);
+        header[27] = (byte) ((SAMPLING_RATE >> 24) & 0xff);
+        header[28] = (byte) (byteRate & 0xff);
+        header[29] = (byte) ((byteRate >> 8) & 0xff);
+        header[30] = (byte) ((byteRate >> 16) & 0xff);
+        header[31] = (byte) ((byteRate >> 24) & 0xff);
+        header[32] = (byte) (2 * 16 / 8);  // block align
+        header[33] = 0;
+        header[34] = 16;  // bits per sample
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (totalAudioLen & 0xff);
+        header[41] = (byte) ((totalAudioLen >> 8) & 0xff);
+        header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
+        header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
+
+
+        if (PermissionRequest.internetConnectionAvailable())
         {
-            // what if overwrite is literally that and doesn't delete the previous file first?
-            // the file size will be the same anyway since this is uncompressed
-            fos = new FileOutputStream(path, false);
+            retval = true;
+            FileOutputStream fos = null;
+            try
+            {
+                // what if overwrite is literally that and doesn't delete the previous file first?
+                // the file size will be the same anyway since this is uncompressed
+                // also, what if network is slow?
+//                fos = new FileOutputStream(caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav", false);
+                fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/temp.wav", false);
+                Log.d("OUT", "File output to " + Environment.getExternalStorageDirectory() + "/temp.wav");
+                fos.write(header, 0, 44);
+                Log.d("OUT", "write from cell " + rec_buff_head);
+                fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
+                fos.close();
+//                AudioPlayer player = new AudioPlayer();
+//                player.play(caller, caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav");
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+                retval = false;
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+                retval = false;
+            }
+            // upload head
+            // check if the file is fine first
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-        // pop head and push empty
-        // upload head
+        // pop head and push empty (conceptually)
+        rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
+        return retval;
     }
 
     private class RecordingThread extends Thread
@@ -94,22 +187,57 @@ public class Mic
         @Override
         public void run()
         {
-            while(recording)
+            Log.d("OUT", "thread started");
+            rec.startRecording();
+            switch (recmode)
             {
-                read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
-                assert read_buff_pointer <= BUFFER_SIZE;
-
-                if (read_buff_pointer >= BUFFER_SIZE)
-                {
-                    for (byte i = 0; i < UPDATE_INTERVAL; i++)
+                case CONTINUOUS:
+                    // check if the other bits work first
+                    while (recording)
                     {
-                        int buff_offset = (UPDATE_INTERVAL - 1 - i) * BUFFER_SIZE;
-                        System.arraycopy(read_buff, 0, rec_buff[i], buff_offset, BUFFER_SIZE);
+                        read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
+                        assert read_buff_pointer <= BUFFER_SIZE;
+
+                        if (read_buff_pointer >= BUFFER_SIZE)
+                        {
+                            int xloc;
+                            for (byte i = 0; i < UPDATE_INTERVAL; i++)
+                            {
+                                xloc = (i + rec_buff_head) % UPDATE_INTERVAL;
+                                int buff_offset = (UPDATE_INTERVAL - 1 - i) * BUFFER_SIZE;
+                                System.arraycopy(read_buff, 0, rec_buff[xloc], buff_offset, BUFFER_SIZE);
+                            }
+                            read_buff_pointer = 0;
+                            saveFile();
+                        }
                     }
-                    read_buff_pointer = 0;
-                    saveFile();
-                }
+                    break;
+                case ONE_OFF:
+                    while (recording)
+                    {
+                        read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
+                        Log.d("OUT", "mic buffer read " + read_buff_pointer);
+                        if (read_buff_pointer >= BUFFER_SIZE)
+                        {
+                            System.arraycopy(read_buff, 0, rec_buff[0], rec_buff_head * BUFFER_SIZE, BUFFER_SIZE);
+                            read_buff_pointer = 0;
+                            rec_buff_head++;
+                            if (rec_buff_head >= UPDATE_INTERVAL)
+                            {
+                                // dont read the wrong cell
+                                rec_buff_head = 0;
+                                recording = false;
+                                saveFile();
+                                // reset since saveFile() updates the head
+                                rec_buff_head = 0;
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    assert false;
             }
+            rec.stop();
         }
     }
 }
