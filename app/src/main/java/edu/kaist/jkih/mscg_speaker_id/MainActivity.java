@@ -28,4 +28,10 @@ public class MainActivity extends AppCompatActivity
         mic.record();
         btn.setEnabled(false);
     }
+
+    public void stop()
+    {
+        findViewById(R.id.button).setEnabled(true);
+        ((Button)findViewById(R.id.button)).setText("● REC");
+    }
 }

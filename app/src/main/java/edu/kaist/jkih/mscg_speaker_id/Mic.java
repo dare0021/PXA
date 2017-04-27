@@ -6,7 +6,10 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.Button;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -39,9 +42,9 @@ public class Mic
     private boolean recording = false;
     private byte[][] rec_buff = new byte[UPDATE_INTERVAL][BUFFER_SIZE * UPDATE_INTERVAL];
     private int rec_buff_head = 0;
-    private Activity caller;
+    private MainActivity caller;
 
-    public Mic (Activity caller)
+    public Mic (MainActivity caller)
     {
         PermissionRequest.request(caller, Manifest.permission.RECORD_AUDIO);
         PermissionRequest.request(caller, Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -60,7 +63,7 @@ public class Mic
 
         // if we leave as is OS might garbage collect this before the 3 secs is up
         thread = new RecordingThread();
-        thread.run();
+        thread.start();
 
         // some testing code here, return false if fail
         return true;
@@ -69,6 +72,9 @@ public class Mic
     public void stop()
     {
         recording = false;
+        caller.runOnUiThread(new Runnable() { public void run() {
+            caller.stop();
+        }});
     }
 
     /**
@@ -219,10 +225,10 @@ public class Mic
                             {
                                 // dont read the wrong cell
                                 rec_buff_head = 0;
-                                recording = false;
                                 saveFile();
                                 // reset since saveFile() updates the head
                                 rec_buff_head = 0;
+                                Mic.this.stop();
                             }
                         }
                     }
