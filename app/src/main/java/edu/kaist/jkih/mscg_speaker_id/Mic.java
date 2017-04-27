@@ -2,18 +2,12 @@ package edu.kaist.jkih.mscg_speaker_id;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Environment;
-import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,6 +20,7 @@ import java.io.IOException;
 public class Mic
 {
     private static final int SAMPLING_RATE = 16000;
+    // requires manual update of WAV header since AudioFormat enums do not coincide with representative numbers. e.g. single channel is enum 16
     private static final int CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     private static final int SOURCE = MediaRecorder.AudioSource.MIC;
@@ -139,7 +134,7 @@ public class Mic
         if (PermissionRequest.internetConnectionAvailable())
         {
             retval = true;
-            FileOutputStream fos = null;
+            FileOutputStream fos;
             try
             {
                 // what if overwrite is literally that and doesn't delete the previous file first?
@@ -152,8 +147,6 @@ public class Mic
                 Log.d("OUT", "write from cell " + rec_buff_head);
                 fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
                 fos.close();
-//                AudioPlayer player = new AudioPlayer();
-//                player.play(caller, caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav");
             }
             catch (FileNotFoundException e)
             {
