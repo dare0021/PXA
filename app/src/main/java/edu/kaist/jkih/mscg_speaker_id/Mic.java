@@ -69,12 +69,15 @@ public class Mic
         return true;
     }
 
+    public boolean isRecording()
+    {
+        return recording;
+    }
+
     public void stop()
     {
         recording = false;
-        caller.runOnUiThread(new Runnable() { public void run() {
-            caller.stop();
-        }});
+        rec_buff_head = 0;
     }
 
     /**
@@ -148,11 +151,15 @@ public class Mic
                 // also, what if network is slow?
 //                fos = new FileOutputStream(caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav", false);
                 fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/temp.wav", false);
-                Log.d("OUT", "File output to " + Environment.getExternalStorageDirectory() + "/temp.wav");
+                String path = Environment.getExternalStorageDirectory() + "/temp.wav";
+                Log.d("OUT", "File output to " + path);
                 fos.write(header, 0, 44);
                 Log.d("OUT", "write from cell " + rec_buff_head);
                 fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
                 fos.close();
+
+                AudioPlayer ap = new AudioPlayer();
+                ap.play(caller, path);
             }
             catch (FileNotFoundException e)
             {
@@ -226,8 +233,6 @@ public class Mic
                                 // dont read the wrong cell
                                 rec_buff_head = 0;
                                 saveFile();
-                                // reset since saveFile() updates the head
-                                rec_buff_head = 0;
                                 Mic.this.stop();
                             }
                         }
