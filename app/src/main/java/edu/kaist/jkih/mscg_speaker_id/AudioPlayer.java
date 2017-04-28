@@ -65,7 +65,6 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
         ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
         // This is the MediaSource representing the media to be played.
         Uri uri = Uri.fromFile(new File(path));
-        ExoPlayer.EventListener el = this;
         MediaSource source = new ExtractorMediaSource(uri, dataSourceFactory, extractorsFactory, null, null);
         // Prepare the player with the source.
         player.prepare(source);

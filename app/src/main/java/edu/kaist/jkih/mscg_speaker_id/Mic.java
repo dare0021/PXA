@@ -126,7 +126,7 @@ public class Mic
         header[29] = (byte) ((byteRate >> 8) & 0xff);
         header[30] = (byte) ((byteRate >> 16) & 0xff);
         header[31] = (byte) ((byteRate >> 24) & 0xff);
-        header[32] = (byte) (2 * 16 / 8);  // block align
+        header[32] = (byte) 2;  // block align NumChannels * BitsPerSample / 8
         header[33] = 0;
         header[34] = 16;  // bits per sample
         header[35] = 0;
@@ -150,8 +150,8 @@ public class Mic
                 // the file size will be the same anyway since this is uncompressed
                 // also, what if network is slow?
 //                fos = new FileOutputStream(caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav", false);
-                fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/temp.wav", false);
                 String path = Environment.getExternalStorageDirectory() + "/temp.wav";
+                fos = new FileOutputStream(path, false);
                 Log.d("OUT", "File output to " + path);
                 fos.write(header, 0, 44);
                 Log.d("OUT", "write from cell " + rec_buff_head);
