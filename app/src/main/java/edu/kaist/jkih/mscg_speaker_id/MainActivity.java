@@ -1,6 +1,7 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -28,6 +29,12 @@ public class MainActivity extends AppCompatActivity
         mic.record();
         btn.setEnabled(false);
         new RecordingProgress().execute(mic);
+    }
+
+    public void play(View view)
+    {
+        AudioPlayer ap = new AudioPlayer(this.getApplicationContext());
+        ap.play(Environment.getExternalStorageDirectory() + "/temp.wav");
     }
 
     public void stop()

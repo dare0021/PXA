@@ -27,7 +27,7 @@
         android:layout_width="150dp"
         android:layout_height="50dp"
         android:text="▶ Play"
-        android:onClick="record"
+        android:onClick="play"
         app:layout_constraintLeft_toRightOf="@+id/button"/>
 
 </android.support.constraint.ConstraintLayout>

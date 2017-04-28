@@ -158,8 +158,8 @@ public class Mic
                 fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
                 fos.close();
 
-                AudioPlayer ap = new AudioPlayer();
-                ap.play(caller, path);
+                AudioPlayer ap = new AudioPlayer(caller.getApplicationContext());
+                ap.play(path);
             }
             catch (FileNotFoundException e)
             {
