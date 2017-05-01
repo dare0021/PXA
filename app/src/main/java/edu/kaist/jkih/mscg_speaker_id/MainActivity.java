@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -36,7 +37,20 @@ public class MainActivity extends AppCompatActivity
 
     public void play(View view)
     {
-        ap.play(Environment.getExternalStorageDirectory() + "/temp.wav");
+        switch (mic.getMode())
+        {
+            case ONE_OFF:
+                ap.play(Environment.getExternalStorageDirectory() + "/temp.wav");
+                break;
+            case PERSISTENT:
+                //fall through
+            case CONTINUOUS:
+                playAudioFiles = !playAudioFiles;
+                Toast.makeText(this, "playAudioFiles = " + playAudioFiles, Toast.LENGTH_SHORT).show();
+                break;
+            default:
+                throw new AssertionError("Not Implemented");
+        }
     }
 
     public void stop()

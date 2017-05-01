@@ -4,10 +4,14 @@ import android.Manifest;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by jkih on 2017-04-24.
@@ -28,11 +32,11 @@ public class Mic
 
     public boolean previewFileAvailable = false;
 
-    private enum RecordingMode
+    public enum RecordingMode
     {
         CONTINUOUS, ONE_OFF, PERSISTENT
     }
-    private RecordingMode recmode = RecordingMode.CONTINUOUS;
+    private RecordingMode recmode = RecordingMode.PERSISTENT;
 
     private RecordingThread thread = null;
     private boolean recording = false;
@@ -74,7 +78,7 @@ public class Mic
     /**
      * @return whether successful. e.g. no internet means fail
      */
-    private boolean saveFile()
+    private boolean saveFile(String dir, String fileName)
     {
         Log.d("OUT", "saving");
         boolean retval = false;
@@ -139,10 +143,8 @@ public class Mic
                 // what if overwrite is literally that and doesn't delete the previous file first?
                 // the file size will be the same anyway since this is uncompressed
                 // also, what if network is slow?
-                // stores files in /storage/emulated/0/
-//                String path = Environment.getExternalStorageDirectory() + "/temp.wav";
 
-                String path = caller.getCacheDir().toString() + "/" + R.string.rectemp_prefix + rec_buff_head + ".wav";
+                String path = dir + "/" + fileName;
                 fos = new FileOutputStream(path, false);
                 Log.d("OUT", "File output to " + path);
                 fos.write(header, 0, 44);
@@ -170,6 +172,11 @@ public class Mic
         return retval;
     }
 
+    public RecordingMode getMode()
+    {
+        return recmode;
+    }
+
     private class RecordingThread extends Thread
     {
         private AudioRecord rec;
@@ -183,10 +190,18 @@ public class Mic
         @Override
         public void run()
         {
-            Log.d("OUT", "thread started");
+            Log.d("OUT", "thread started with mode " + recmode);
+            String dir = caller.getCacheDir().toString();
+            String fileName = "";
+            Log.d("OUT", "initial path @ " + dir + " / " + fileName);
             rec.startRecording();
             switch (recmode)
             {
+                case PERSISTENT:
+                    // stores files in /storage/emulated/0/
+                    // which is the phone's root as far as Windows is concerned
+                    dir = Environment.getExternalStorageDirectory().toString();
+                    // fall through
                 case CONTINUOUS:
                     // check if the other bits work first
                     while (recording)
@@ -205,7 +220,16 @@ public class Mic
                             }
                             read_buff_pointer = 0;
                             previewFileAvailable = true;
-                            saveFile();
+                            // there should be a better way to do this really
+                            if (recmode == RecordingMode.CONTINUOUS)
+                            {
+                                fileName = caller.getApplicationContext().getString(R.string.rectemp_prefix) + rec_buff_head + ".wav";
+                            }
+                            else if (recmode == RecordingMode.PERSISTENT)
+                            {
+                                fileName = (new SimpleDateFormat("dd_HH.mm.ss", Locale.getDefault())).format(Calendar.getInstance().getTime()) + ".wav";
+                            }
+                            saveFile(dir, fileName);
                         }
                     }
                     break;
@@ -223,7 +247,7 @@ public class Mic
                             {
                                 // dont read the wrong cell
                                 rec_buff_head = 0;
-                                saveFile();
+                                saveFile(Environment.getExternalStorageDirectory().toString(), "temp.wav");
                                 Mic.this.stop();
                             }
                         }

@@ -2,6 +2,7 @@ package edu.kaist.jkih.mscg_speaker_id;
 
 import android.content.Context;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.util.Log;
 
@@ -70,7 +71,7 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
     public void playPCM(byte[] bytarr)
     {
         play(bytarr,
-                android.media.AudioManager.STREAM_VOICE_CALL,
+                AudioManager.STREAM_MUSIC,
                 16000,
                 AudioFormat.CHANNEL_OUT_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
@@ -78,12 +79,12 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
                 android.media.AudioTrack.MODE_STATIC);
     }
 
-    public void play(byte[] bytarr, int inputType, int samplingRate, int channelConfig, int format, int bufferSize, int mode)
+    public void play(byte[] bytarr, int outputStream, int samplingRate, int channelConfig, int format, int bufferSize, int mode)
     {
         try
         {
             android.media.AudioTrack audioTrack = new  android.media.AudioTrack(
-                    inputType, samplingRate, channelConfig, format, bufferSize, mode);
+                    outputStream, samplingRate, channelConfig, format, bufferSize, mode);
             audioTrack.write(bytarr, 0, bytarr.length);
             audioTrack.play();
         }
