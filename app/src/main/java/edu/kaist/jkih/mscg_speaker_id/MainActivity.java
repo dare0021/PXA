@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity
      * Animates the record button label while recording
      * Also plays the audio during debug
      */
+    // do not remove mic being relayed explicitly
+    // breaks AudioRecord for some reason
     private class RecordingProgress extends AsyncTask<Mic, Integer, Integer>
     {
         private String prefix = "Recoding";
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity
                 publishProgress(recCell);
                 if(playAudioFiles && mic.previewFileAvailable)
                 {
-                    ap.play(mic.getPreview_buff());
+                    ap.playPCM(mic.getPreview_buff());
                     mic.previewFileAvailable = false;
                 }
                 try

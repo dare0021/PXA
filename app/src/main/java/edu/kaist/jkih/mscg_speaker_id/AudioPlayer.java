@@ -1,15 +1,11 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
 import android.media.AudioFormat;
 import android.net.Uri;
-import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -25,9 +21,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
-import com.google.android.exoplayer2.upstream.ByteArrayDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
@@ -71,26 +65,32 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
         // Prepare the player with the source.
         player.prepare(source);
         // autoplay is on
-        // TODO: auto release
     }
 
-    public void play(byte[] bytarr)
+    public void playPCM(byte[] bytarr)
+    {
+        play(bytarr,
+                android.media.AudioManager.STREAM_VOICE_CALL,
+                16000,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bytarr.length,
+                android.media.AudioTrack.MODE_STATIC);
+    }
+
+    public void play(byte[] bytarr, int inputType, int samplingRate, int channelConfig, int format, int bufferSize, int mode)
     {
         try
         {
             android.media.AudioTrack audioTrack = new  android.media.AudioTrack(
-                    android.media.AudioManager.STREAM_VOICE_CALL,
-                    16000,
-                    AudioFormat.CHANNEL_OUT_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    bytarr.length,
-                    android.media.AudioTrack.MODE_STATIC);
+                    inputType, samplingRate, channelConfig, format, bufferSize, mode);
             audioTrack.write(bytarr, 0, bytarr.length);
             audioTrack.play();
         }
         catch(Throwable t)
         {
-            Log.d("Audio","Playback Failed");
+            Log.d("Audio","Byte array playback failed");
+            t.printStackTrace();
         }
     }
 
