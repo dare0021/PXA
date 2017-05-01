@@ -7,11 +7,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity
 {
+    private boolean playAudioFiles = true;
+
     Mic mic = null;
+    AudioPlayer ap = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +21,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         mic = new Mic(this);
+        ap = new AudioPlayer(this.getApplicationContext());
     }
 
     public void record(View view)
@@ -33,7 +36,6 @@ public class MainActivity extends AppCompatActivity
 
     public void play(View view)
     {
-        AudioPlayer ap = new AudioPlayer(this.getApplicationContext());
         ap.play(Environment.getExternalStorageDirectory() + "/temp.wav");
     }
 
@@ -43,6 +45,10 @@ public class MainActivity extends AppCompatActivity
         ((Button)findViewById(R.id.button)).setText("● REC");
     }
 
+    /**
+     * Animates the record button label while recording
+     * Also plays the audio during debug
+     */
     private class RecordingProgress extends AsyncTask<Mic, Integer, Integer>
     {
         private String prefix = "Recoding";
@@ -52,10 +58,15 @@ public class MainActivity extends AppCompatActivity
         protected Integer doInBackground(Mic ... mics)
         {
             mic = mics[0];
-            int i = 0;
+            int recCell = 0;
             while (mic.isRecording())
             {
-                publishProgress(i);
+                publishProgress(recCell);
+                if(mic.previewFileAvailable.length() > 0)
+                {
+                    ap.play(mic.previewFileAvailable);
+                    mic.previewFileAvailable = "";
+                }
                 try
                 {
                     Thread.sleep(100);
@@ -66,8 +77,8 @@ public class MainActivity extends AppCompatActivity
                     return 0;
                 }
 
-                i++;
-                i %= maxPostfixes + 1;
+                recCell++;
+                recCell %= maxPostfixes + 1;
             }
             return 1;
         }

@@ -1,17 +1,11 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
 import android.Manifest;
-import android.app.Activity;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Button;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -32,15 +26,18 @@ public class Mic
     // seconds to collect for querying. Querying done very second regardless.
     private static final int UPDATE_INTERVAL = 3;
 
+    public String previewFileAvailable = "";
+
     private enum RecordingMode
     {
         CONTINUOUS, ONE_OFF
     }
-    private RecordingMode recmode = RecordingMode.ONE_OFF;
+    private RecordingMode recmode = RecordingMode.CONTINUOUS;
 
     private RecordingThread thread = null;
     private boolean recording = false;
     private byte[][] rec_buff = new byte[UPDATE_INTERVAL][BUFFER_SIZE * UPDATE_INTERVAL];
+    private byte[] preview_buff = new byte[BUFFER_SIZE];
     private int rec_buff_head = 0;
     private MainActivity caller;
 
@@ -54,19 +51,12 @@ public class Mic
         this.caller = caller;
     }
 
-    public boolean record()
+    public void record()
     {
         recording = true;
 
-        String path = Environment.getExternalStorageDirectory().getPath() + "/fakepath.pcm";
-        // logic for an actual path instead of fakepath
-
-        // if we leave as is OS might garbage collect this before the 3 secs is up
         thread = new RecordingThread();
         thread.start();
-
-        // some testing code here, return false if fail
-        return true;
     }
 
     public boolean isRecording()
@@ -78,10 +68,10 @@ public class Mic
     {
         recording = false;
         rec_buff_head = 0;
+        previewFileAvailable = "";
     }
 
     /**
-     *
      * @return whether successful. e.g. no internet means fail
      */
     private boolean saveFile()
@@ -126,7 +116,7 @@ public class Mic
         header[29] = (byte) ((byteRate >> 8) & 0xff);
         header[30] = (byte) ((byteRate >> 16) & 0xff);
         header[31] = (byte) ((byteRate >> 24) & 0xff);
-        header[32] = (byte) 2;  // block align NumChannels * BitsPerSample / 8
+        header[32] = (byte) 2;  // block align = NumChannels * BitsPerSample / 8
         header[33] = 0;
         header[34] = 16;  // bits per sample
         header[35] = 0;
@@ -149,22 +139,26 @@ public class Mic
                 // what if overwrite is literally that and doesn't delete the previous file first?
                 // the file size will be the same anyway since this is uncompressed
                 // also, what if network is slow?
-//                fos = new FileOutputStream(caller.getCacheDir().toString() + "/tempfile_" + rec_buff_head + ".wav", false);
-                String path = Environment.getExternalStorageDirectory() + "/temp.wav";
+                // stores files in /storage/emulated/0/
+//                String path = Environment.getExternalStorageDirectory() + "/temp.wav";
+
+                // 1 sec preview file
+                String path = caller.getCacheDir().toString() + "/" + R.string.rectemp_preview + ".wav";
+                fos = new FileOutputStream(path, false);
+                Log.d("OUT", "File output (preview) to " + path);
+                fos.write(header, 0, 44);
+                fos.write(preview_buff, 0, BUFFER_SIZE);
+                fos.close();
+                previewFileAvailable = path;
+
+                // 3 sec upload file
+                path = caller.getCacheDir().toString() + "/" + R.string.rectemp_prefix + rec_buff_head + ".wav";
                 fos = new FileOutputStream(path, false);
                 Log.d("OUT", "File output to " + path);
                 fos.write(header, 0, 44);
                 Log.d("OUT", "write from cell " + rec_buff_head);
                 fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
                 fos.close();
-
-                AudioPlayer ap = new AudioPlayer(caller.getApplicationContext());
-                ap.play(path);
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-                retval = false;
             }
             catch (IOException e)
             {
@@ -182,7 +176,6 @@ public class Mic
     private class RecordingThread extends Thread
     {
         private AudioRecord rec;
-        private byte[] read_buff = new byte[BUFFER_SIZE];
         private int read_buff_pointer = 0;
 
         public RecordingThread()
@@ -201,7 +194,7 @@ public class Mic
                     // check if the other bits work first
                     while (recording)
                     {
-                        read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
+                        read_buff_pointer += rec.read(preview_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
                         assert read_buff_pointer <= BUFFER_SIZE;
 
                         if (read_buff_pointer >= BUFFER_SIZE)
@@ -211,7 +204,7 @@ public class Mic
                             {
                                 xloc = (i + rec_buff_head) % UPDATE_INTERVAL;
                                 int buff_offset = (UPDATE_INTERVAL - 1 - i) * BUFFER_SIZE;
-                                System.arraycopy(read_buff, 0, rec_buff[xloc], buff_offset, BUFFER_SIZE);
+                                System.arraycopy(preview_buff, 0, rec_buff[xloc], buff_offset, BUFFER_SIZE);
                             }
                             read_buff_pointer = 0;
                             saveFile();
@@ -221,11 +214,11 @@ public class Mic
                 case ONE_OFF:
                     while (recording)
                     {
-                        read_buff_pointer += rec.read(read_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
+                        read_buff_pointer += rec.read(preview_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
                         Log.d("OUT", "mic buffer read " + read_buff_pointer);
                         if (read_buff_pointer >= BUFFER_SIZE)
                         {
-                            System.arraycopy(read_buff, 0, rec_buff[0], rec_buff_head * BUFFER_SIZE, BUFFER_SIZE);
+                            System.arraycopy(preview_buff, 0, rec_buff[0], rec_buff_head * BUFFER_SIZE, BUFFER_SIZE);
                             read_buff_pointer = 0;
                             rec_buff_head++;
                             if (rec_buff_head >= UPDATE_INTERVAL)

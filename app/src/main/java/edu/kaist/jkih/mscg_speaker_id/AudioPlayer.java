@@ -30,7 +30,6 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
-import java.net.URI;
 
 /**
  * Created by jkih on 2017-04-24.

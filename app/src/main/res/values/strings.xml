@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MSCG_speaker_id</string>
+    <string name="rectemp_prefix">rectemp</string>
+    <string name="rectemp_preview">rec_preview</string>
 </resources>
