@@ -30,7 +30,7 @@ public class Mic
 
     private enum RecordingMode
     {
-        CONTINUOUS, ONE_OFF
+        CONTINUOUS, ONE_OFF, PERSISTENT
     }
     private RecordingMode recmode = RecordingMode.CONTINUOUS;
 
@@ -192,7 +192,7 @@ public class Mic
                     while (recording)
                     {
                         read_buff_pointer += rec.read(preview_buff, read_buff_pointer, BUFFER_SIZE - read_buff_pointer);
-                        assert read_buff_pointer <= BUFFER_SIZE;
+                        if (read_buff_pointer > BUFFER_SIZE) throw new AssertionError("buffer overflow");
 
                         if (read_buff_pointer >= BUFFER_SIZE)
                         {
@@ -230,7 +230,7 @@ public class Mic
                     }
                     break;
                 default:
-                    assert false;
+                    throw new AssertionError("Not Implemented Yet");
             }
             rec.stop();
         }
