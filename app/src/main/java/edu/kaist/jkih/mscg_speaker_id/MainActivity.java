@@ -62,10 +62,10 @@ public class MainActivity extends AppCompatActivity
             while (mic.isRecording())
             {
                 publishProgress(recCell);
-                if(mic.previewFileAvailable.length() > 0)
+                if(playAudioFiles && mic.previewFileAvailable)
                 {
-                    ap.play(mic.previewFileAvailable);
-                    mic.previewFileAvailable = "";
+                    ap.play(mic.getPreview_buff());
+                    mic.previewFileAvailable = false;
                 }
                 try
                 {

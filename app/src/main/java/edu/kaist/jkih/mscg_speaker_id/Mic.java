@@ -26,7 +26,7 @@ public class Mic
     // seconds to collect for querying. Querying done very second regardless.
     private static final int UPDATE_INTERVAL = 3;
 
-    public String previewFileAvailable = "";
+    public boolean previewFileAvailable = false;
 
     private enum RecordingMode
     {
@@ -68,7 +68,7 @@ public class Mic
     {
         recording = false;
         rec_buff_head = 0;
-        previewFileAvailable = "";
+        previewFileAvailable = false;
     }
 
     /**
@@ -142,17 +142,7 @@ public class Mic
                 // stores files in /storage/emulated/0/
 //                String path = Environment.getExternalStorageDirectory() + "/temp.wav";
 
-                // 1 sec preview file
-                String path = caller.getCacheDir().toString() + "/" + R.string.rectemp_preview + ".wav";
-                fos = new FileOutputStream(path, false);
-                Log.d("OUT", "File output (preview) to " + path);
-                fos.write(header, 0, 44);
-                fos.write(preview_buff, 0, BUFFER_SIZE);
-                fos.close();
-                previewFileAvailable = path;
-
-                // 3 sec upload file
-                path = caller.getCacheDir().toString() + "/" + R.string.rectemp_prefix + rec_buff_head + ".wav";
+                String path = caller.getCacheDir().toString() + "/" + R.string.rectemp_prefix + rec_buff_head + ".wav";
                 fos = new FileOutputStream(path, false);
                 Log.d("OUT", "File output to " + path);
                 fos.write(header, 0, 44);
@@ -170,6 +160,13 @@ public class Mic
         }
         // pop head and push empty (conceptually)
         rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
+        return retval;
+    }
+
+    public byte[] getPreview_buff()
+    {
+        byte[] retval = new byte[BUFFER_SIZE];
+        System.arraycopy(preview_buff, 0, retval, 0, BUFFER_SIZE);
         return retval;
     }
 
@@ -207,6 +204,7 @@ public class Mic
                                 System.arraycopy(preview_buff, 0, rec_buff[xloc], buff_offset, BUFFER_SIZE);
                             }
                             read_buff_pointer = 0;
+                            previewFileAvailable = true;
                             saveFile();
                         }
                     }
