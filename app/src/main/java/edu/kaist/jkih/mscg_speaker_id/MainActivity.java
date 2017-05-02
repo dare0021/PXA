@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
 {
-    private boolean playAudioFiles = true;
+    private boolean playAudioFiles = false;
 
     Mic mic = null;
     AudioPlayer ap = null;
@@ -25,13 +25,22 @@ public class MainActivity extends AppCompatActivity
         ap = new AudioPlayer(this.getApplicationContext());
     }
 
-    public void record(View view)
+    public void recBtn(View view)
     {
-        Button btn = (Button) findViewById(R.id.button);
-        Mic mic = new Mic(this);
+        if (mic.isRecording())
+        {
+            stop();
+        }
+        else
+        {
+            record();
+        }
+    }
+
+    public void record()
+    {
         Log.d("OUT", "Attempt recording");
         mic.record();
-        btn.setEnabled(false);
         new RecordingProgress().execute(mic);
     }
 
@@ -55,7 +64,7 @@ public class MainActivity extends AppCompatActivity
 
     public void stop()
     {
-        findViewById(R.id.button).setEnabled(true);
+        mic.stop();
         ((Button)findViewById(R.id.button)).setText("● REC");
     }
 
@@ -119,7 +128,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(Integer i)
         {
-            MainActivity.this.stop();
+
         }
     }
 }

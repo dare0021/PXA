@@ -39,6 +39,7 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
 {
     private Context callerContext;
     private SimpleExoPlayer player;
+    private android.media.AudioTrack byteArrPlayer;
 
     public AudioPlayer(Context callerContext)
     {
@@ -83,10 +84,16 @@ public class AudioPlayer implements SimpleExoPlayer.EventListener
     {
         try
         {
-            android.media.AudioTrack audioTrack = new  android.media.AudioTrack(
+            // should we be recycling the player instead?
+            // its working fine as is tho
+            if (byteArrPlayer != null)
+            {
+                byteArrPlayer.release();
+            }
+            byteArrPlayer = new  android.media.AudioTrack(
                     outputStream, samplingRate, channelConfig, format, bufferSize, mode);
-            audioTrack.write(bytarr, 0, bytarr.length);
-            audioTrack.play();
+            byteArrPlayer.write(bytarr, 0, bytarr.length);
+            byteArrPlayer.play();
         }
         catch(Throwable t)
         {

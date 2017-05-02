@@ -41,7 +41,7 @@ public class Mic
         // debug mode (save files in storage instead of using volatile cache)
         PERSISTENT
     }
-    private RecordingMode recmode = RecordingMode.PERSISTENT;
+    private RecordingMode recmode = RecordingMode.CONTINUOUS;
 
     private RecordingThread thread = null;
     private boolean recording = false;
@@ -49,6 +49,7 @@ public class Mic
     private byte[] preview_buff = new byte[BUFFER_SIZE];
     private int rec_buff_head = 0;
     private MainActivity caller;
+    private int ignoringFirst = UPDATE_INTERVAL - 1;
 
     public Mic (MainActivity caller)
     {
@@ -87,6 +88,13 @@ public class Mic
     {
         Log.d("OUT", "saving");
         boolean retval = false;
+        if (ignoringFirst > 0)
+        {
+            ignoringFirst--;
+            Log.d("OUT", "Ignore first few (incomplete) files");
+            rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
+            return retval;
+        }
 
         byte[] header = new byte[44];
         int totalAudioLen = BUFFER_SIZE * UPDATE_INTERVAL;
