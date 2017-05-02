@@ -7,7 +7,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import static android.os.Environment.getExternalStorageDirectory;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -23,8 +31,40 @@ public class MainActivity extends AppCompatActivity
 
         mic = new Mic(this);
         ap = new AudioPlayer(this.getApplicationContext());
+
+        try
+        {
+            FileInputStream fis = new FileInputStream(getExternalStorageDirectory().toString() + getString(R.string.apikey_file));
+            char[] apikey = new char[32];
+            for (int i=0; i<32; i++)
+            {
+                apikey[i] = (char)fis.read();
+            }
+            ((TextView) findViewById(R.id.textview)).setText(apikey, 0, 32);
+        }
+        catch (FileNotFoundException e)
+        {
+            Log.d("ERR", "API key file missing");
+            Log.d("ERR", "Should be at: " + getExternalStorageDirectory().toString() + getString(R.string.apikey_file));
+            e.printStackTrace();
+            this.finish();
+        }
+        catch (IOException e)
+        {
+            Log.d("ERR", "Failed to read API key file");
+            e.printStackTrace();
+        }
+        catch (NullPointerException e)
+        {
+            Log.d("ERR", "Failed to write char array to UI");
+            e.printStackTrace();
+        }
     }
 
+    /** <pre>
+     * Do not add additional logic to this function
+     * Will break compatibility for Mic's other modes
+     */
     public void recBtn(View view)
     {
         if (mic.isRecording())
@@ -49,7 +89,7 @@ public class MainActivity extends AppCompatActivity
         switch (mic.getMode())
         {
             case ONE_OFF:
-                ap.play(Environment.getExternalStorageDirectory() + "/temp.wav");
+                ap.play(getExternalStorageDirectory() + "/temp.wav");
                 break;
             case PERSISTENT:
                 //fall through
