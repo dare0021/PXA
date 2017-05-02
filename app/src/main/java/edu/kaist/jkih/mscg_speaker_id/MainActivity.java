@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity
 
     Mic mic = null;
     AudioPlayer ap = null;
+    MSCogServWrapper ms = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,34 +32,8 @@ public class MainActivity extends AppCompatActivity
 
         mic = new Mic(this);
         ap = new AudioPlayer(this.getApplicationContext());
-
-        try
-        {
-            FileInputStream fis = new FileInputStream(getExternalStorageDirectory().toString() + getString(R.string.apikey_file));
-            char[] apikey = new char[32];
-            for (int i=0; i<32; i++)
-            {
-                apikey[i] = (char)fis.read();
-            }
-            ((TextView) findViewById(R.id.textview)).setText(apikey, 0, 32);
-        }
-        catch (FileNotFoundException e)
-        {
-            Log.d("ERR", "API key file missing");
-            Log.d("ERR", "Should be at: " + getExternalStorageDirectory().toString() + getString(R.string.apikey_file));
-            e.printStackTrace();
-            this.finish();
-        }
-        catch (IOException e)
-        {
-            Log.d("ERR", "Failed to read API key file");
-            e.printStackTrace();
-        }
-        catch (NullPointerException e)
-        {
-            Log.d("ERR", "Failed to write char array to UI");
-            e.printStackTrace();
-        }
+        ms = new MSCogServWrapper(getExternalStorageDirectory().toString() + getString(R.string.apikey_file),
+                                    getExternalStorageDirectory().toString() + getString(R.string.alias_file));
     }
 
     /** <pre>
