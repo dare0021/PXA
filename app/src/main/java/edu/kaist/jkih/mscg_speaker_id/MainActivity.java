@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity
 
     public void upload(String path)
     {
-        int receipt = ms.identify(path, false);
+        int receipt = ms.identify(path, true);
         new WaitForUpload().execute(receipt);
     }
 

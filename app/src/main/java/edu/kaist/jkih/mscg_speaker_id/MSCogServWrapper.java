@@ -130,12 +130,14 @@ public class MSCogServWrapper
      */
     public int identify(String filePath, boolean isShort)
     {
-        ArrayList<Object> args = new ArrayList<>();
-        args.add(msWrapper);
-        args.add(filePath);
-        args.add(isShort);
+        int receipt = getUID();
+        Object[] args = new Object[4];
+        args[0] = msWrapper;
+        args[1] = filePath;
+        args[2] = isShort;
+        args[3] = receipt;
         new Identify().execute(args);
-        return getUID();
+        return receipt;
     }
 
     private class Identify extends AsyncTask<Object, Integer, IdentificationOperation>
