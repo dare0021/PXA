@@ -29,5 +29,20 @@
         android:text="▶ Play"
         android:onClick="play"
         app:layout_constraintLeft_toRightOf="@+id/button"/>
+    <Button
+        android:id="@+id/buttonUpload1"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
+        android:text="▲ Upload 1"
+        android:onClick="uploadTest"
+        app:layout_constraintTop_toBottomOf="@+id/button"/>
+    <Button
+        android:id="@+id/buttonUpload2"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
+        android:text="▲ Upload 2"
+        android:onClick="uploadTest"
+        app:layout_constraintTop_toBottomOf="@+id/button"
+        app:layout_constraintLeft_toRightOf="@+id/buttonUpload1"/>
 
 </android.support.constraint.ConstraintLayout>
