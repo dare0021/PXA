@@ -97,6 +97,14 @@ public class MainActivity extends AppCompatActivity
             upload(getExternalStorageDirectory() + "/test2.wav");
     }
 
+    /**
+     * Debugging code
+     */
+    public void manualUpdate(View view)
+    {
+        ms.update();
+    }
+
     private class WaitForUpload extends AsyncTask<Integer, Integer, MSOutputWrapper>
     {
         @Override
