@@ -88,7 +88,7 @@ public class MSCogServWrapper
             e.printStackTrace();
         }
 
-        msWrapper = new SpeakerIdentificationRestClient(apikey.toString());
+        msWrapper = new SpeakerIdentificationRestClient(new String(apikey));
         update();
     }
 
