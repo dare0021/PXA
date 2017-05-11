@@ -31,6 +31,7 @@ public class Mic
     private static final int UPDATE_INTERVAL = 3;
     // in sec. Note ms response time is 2~5 sec over LTE
     // note an interval greater than UPDATE_INTERVAL will lead to discarded audio data
+    // experimental results indicate MS API is limited to one request every 2~3 seconds, and returns the results in chronological order
     private static final int UPLOAD_EVERY = 2;
 
     public boolean previewFileAvailable = false;

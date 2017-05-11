@@ -1,5 +1,6 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -132,12 +133,22 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(MSOutputWrapper result)
         {
+            int fg = Color.GRAY;
+            if (result.alias.endsWith("C"))
+            {
+                fg = Color.BLUE;
+            }
+            else if (result.alias.endsWith("M"))
+            {
+                fg = Color.RED;
+            }
             String outval = "";
             outval += "receipt: " + result.receipt + "\n";
             outval += "UID: " + result.id + "\n";
             outval += "Alias: " + result.alias + "\n";
             outval += "Confidence: " + result.confidence;
             ((TextView)findViewById(R.id.textview)).setText(outval);
+            ((TextView)findViewById(R.id.textview)).setTextColor(fg);
         }
     }
 
