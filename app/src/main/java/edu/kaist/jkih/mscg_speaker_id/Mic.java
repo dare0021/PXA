@@ -29,6 +29,9 @@ public class Mic
     private static final int BUFFER_SIZE = 2 * SAMPLING_RATE;
     // seconds to collect for querying. Querying done very second regardless.
     private static final int UPDATE_INTERVAL = 3;
+    // in sec. Note ms response time is 2~5 sec over LTE
+    // note an interval greater than UPDATE_INTERVAL will lead to discarded audio data
+    private static final int UPLOAD_EVERY = 2;
 
     public boolean previewFileAvailable = false;
 
@@ -49,7 +52,7 @@ public class Mic
     private byte[] preview_buff = new byte[BUFFER_SIZE];
     private int rec_buff_head = 0;
     private MainActivity caller;
-    private int ignoringFirst = UPDATE_INTERVAL - 1;
+    private int timeSinceUpload = UPDATE_INTERVAL - 1;
 
     public Mic (MainActivity caller)
     {
@@ -88,12 +91,18 @@ public class Mic
     {
         Log.d("OUT", "saving");
         boolean retval = false;
-        if (ignoringFirst > 0)
+        if (timeSinceUpload > 0)
         {
-            ignoringFirst--;
-            Log.d("OUT", "Ignore first few (incomplete) files");
+            timeSinceUpload--;
+            Log.d("OUT", "Upload request denied by upload interval check.");
+            Log.d("OUT", "timeSinceUpload at " + timeSinceUpload + " after decrement");
+            Log.d("OUT", "UPLOAD_EVERY is " + UPLOAD_EVERY);
             rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
             return retval;
+        }
+        else
+        {
+            timeSinceUpload = UPLOAD_EVERY;
         }
 
         byte[] header = new byte[44];
