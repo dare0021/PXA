@@ -53,6 +53,7 @@ public class Mic
     private int rec_buff_head = 0;
     private MainActivity caller;
     private int timeSinceUpload = UPDATE_INTERVAL - 1;
+    private String latestFile = "";
 
     public Mic (MainActivity caller)
     {
@@ -173,6 +174,7 @@ public class Mic
                 Log.d("OUT", "write from cell " + rec_buff_head);
                 fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
                 fos.close();
+                latestFile = path;
             }
             catch (IOException e)
             {
@@ -180,7 +182,6 @@ public class Mic
                 retval = false;
             }
             // upload head
-            // check if the file is fine first
         }
         // pop head and push empty (conceptually)
         rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
@@ -191,6 +192,17 @@ public class Mic
     {
         byte[] retval = new byte[BUFFER_SIZE];
         System.arraycopy(preview_buff, 0, retval, 0, BUFFER_SIZE);
+        return retval;
+    }
+
+    /**
+     *
+     * @return the latest file to upload as the file's path
+     */
+    public String getLatestFile()
+    {
+        String retval = latestFile;
+        latestFile = "";
         return retval;
     }
 

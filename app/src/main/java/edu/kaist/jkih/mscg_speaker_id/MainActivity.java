@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity
     private static final int UPLOAD_CHECK_INTERVAL = 50;
 
     private boolean playAudioFiles = false;
+    private boolean uploadFiles = false;
 
     Mic mic = null;
     AudioPlayer ap = null;
@@ -100,9 +101,10 @@ public class MainActivity extends AppCompatActivity
     /**
      * Debugging code
      */
-    public void manualUpdate(View view)
+    public void toggleAutoUpload(View view)
     {
-        ms.update();
+        uploadFiles = !uploadFiles;
+        Toast.makeText(this, "uploadFiles = " + uploadFiles, Toast.LENGTH_SHORT).show();
     }
 
     private class WaitForUpload extends AsyncTask<Integer, Integer, MSOutputWrapper>
@@ -162,6 +164,15 @@ public class MainActivity extends AppCompatActivity
                 {
                     ap.playPCM(mic.getPreview_buff());
                     mic.previewFileAvailable = false;
+                }
+
+                if (uploadFiles == true)
+                {
+                    String path = mic.getLatestFile();
+                    if (path.length() > 0)
+                    {
+                        upload(path);
+                    }
                 }
                 try
                 {
