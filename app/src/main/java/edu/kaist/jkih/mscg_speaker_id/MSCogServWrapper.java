@@ -37,6 +37,7 @@ public class MSCogServWrapper
     private SpeakerIdentificationRestClient msWrapper;
     private HashMap<UUID, String> aliases = new HashMap<>();
     private List<Profile> profiles;
+    private AsyncTask idThread = null;
 
     public MSCogServWrapper(String apikeyPath, String aliasPath)
     {
@@ -131,12 +132,20 @@ public class MSCogServWrapper
     public int identify(String filePath, boolean isShort)
     {
         int receipt = getUID();
+
+        if (idThread != null && idThread.getStatus() != AsyncTask.Status.FINISHED)
+        {
+            Log.d("OUT", "Thread state: " + idThread.getStatus());
+            Log.d("OUT", "Existing concurrent request. Request denied.");
+            return receipt;
+        }
+
         Object[] args = new Object[4];
         args[0] = msWrapper;
         args[1] = filePath;
         args[2] = isShort;
         args[3] = receipt;
-        new Identify().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, args);
+        idThread = new Identify().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, args);
 //        MS SDK only allows 1 concurrent connection and throws an unhandled exception that kills the session otherwise
 //        new Identify().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, args);
         return receipt;
