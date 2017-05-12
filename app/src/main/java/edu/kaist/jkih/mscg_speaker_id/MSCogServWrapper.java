@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.microsoft.cognitive.speakerrecognition.SpeakerIdentificationRestClient;
 import com.microsoft.cognitive.speakerrecognition.contract.GetProfileException;
@@ -30,6 +32,23 @@ public class MSCogServWrapper
     private static final int NUM_RETRIES = 10;
     // in ms
     private static final int RETRY_DELAY = 500;
+    // in ms, the amount of time before sending another request
+    private static final int REQUEST_INTERVAL = 2000;
+    // in ms, the amount of time the upload polling thread sleeps between polls
+    private static final int UPLOAD_POLLING_DELAY = 100;
+
+    public enum RequestBehavior
+    {
+        /**
+         * All requests are served, even if a queue forms
+         */
+        SEQUENTIAL_QUEUE,
+        /**
+         * Requests made before the REQUEST_INTERVAL are discarded
+         * Default value
+         */
+        DISCARD
+    }
 
     // do not use directly lest ye tempt the gods of thread safety
     private HashMap<Integer, IdentificationOperation> readyResults = new HashMap<>();
@@ -37,6 +56,11 @@ public class MSCogServWrapper
     private SpeakerIdentificationRestClient msWrapper;
     private HashMap<UUID, String> aliases = new HashMap<>();
     private List<Profile> profiles;
+    /** Do not manipulate directly */
+    private RequestBehavior requestBehavior;
+    private AtomicBoolean uploadToken = new AtomicBoolean(true);
+    /** Do not manipulate directly */
+    private Object[] uploadQueue;
 
     public MSCogServWrapper(String apikeyPath, String aliasPath)
     {
@@ -90,11 +114,24 @@ public class MSCogServWrapper
 
         msWrapper = new SpeakerIdentificationRestClient(new String(apikey));
         update();
+        setRequestBehavior(RequestBehavior.DISCARD);
+        Log.d("IMP", "ASYNCTASK POOL SIZE: " + Runtime.getRuntime().availableProcessors() + 1);
+        new IdentifyThread().execute();
     }
 
     public void update()
     {
         new UpdateAllSpeakers().execute(msWrapper);
+    }
+
+    public void setRequestBehavior(RequestBehavior newBehavior)
+    {
+        if (requestBehavior != RequestBehavior.DISCARD && newBehavior == RequestBehavior.DISCARD)
+        {
+            new DiscarderThread().execute();
+        }
+        //discarder deactivation done automatically from the discarder thread
+        requestBehavior = newBehavior;
     }
 
     /**
@@ -130,17 +167,34 @@ public class MSCogServWrapper
      */
     public int identify(String filePath, boolean isShort)
     {
+
         int receipt = getUID();
         Object[] args = new Object[4];
         args[0] = msWrapper;
         args[1] = filePath;
         args[2] = isShort;
         args[3] = receipt;
-        new Identify().execute(args);
+        getsetQueue(args);
         return receipt;
     }
 
-    private class Identify extends AsyncTask<Object, Integer, IdentificationOperation>
+    private synchronized Object[] getsetQueue(Object[] args)
+    {
+        Object[] retval = null;
+        if (args != null)
+        {
+            uploadQueue = args;
+            retval = args;
+        }
+        else
+        {
+            retval = uploadQueue;
+            uploadQueue = null;
+        }
+        return retval;
+    }
+
+    private class IdentifyThread extends AsyncTask<Integer, Integer, Integer>
     {
         private int receipt;
 
@@ -152,73 +206,94 @@ public class MSCogServWrapper
          * 3) int receipt
          */
         @Override
-        protected IdentificationOperation doInBackground(Object ... args)
+        protected Integer doInBackground(Integer ... ints)
         {
-            SpeakerIdentificationRestClient client = (SpeakerIdentificationRestClient) args[0];
-            String filePath = (String) args[1];
-            boolean isShort = (boolean) args[2];
-            receipt = (int) args[3];
-
-            List<UUID> ids = new ArrayList<>();
-            for (Profile profile : profiles)
+            Object[] args = null;
+            while (true)
             {
-                ids.add(profile.identificationProfileId);
-            }
-
-            IdentificationOperation result = null;
-            try
-            {
-                OperationLocation processPollingLocation;
-                InputStream is = new FileInputStream(filePath);
-                processPollingLocation = client.identify(is, ids, isShort);
-                is.close();
-
-                int retries = 0;
-                while (true)
+                Log.d("OUT", "ID running...");
+                while (requestBehavior == RequestBehavior.DISCARD &&
+                        uploadToken.getAndSet(false) == false)
                 {
-                    result = client.checkIdentificationStatus(processPollingLocation);
-
-                    if (result.status == com.microsoft.cognitive.speakerrecognition.contract.identification.Status.SUCCEEDED)
+                    args = getsetQueue(null);
+                    if(args != null)
                     {
                         break;
                     }
-                    else if (result.status == com.microsoft.cognitive.speakerrecognition.contract.identification.Status.FAILED
-                            || retries >= NUM_RETRIES)
+                    else
                     {
-                        throw new IdentificationException((result.message));
+                        uploadToken.set(true);
                     }
-
-                    retries++;
-                    publishProgress(retries);
                     try
                     {
-                        Thread.sleep(RETRY_DELAY);
-                    }
-                    catch (InterruptedException e)
+                        Thread.sleep(UPLOAD_POLLING_DELAY);
+                    } catch (InterruptedException e)
                     {
                         e.printStackTrace();
                     }
                 }
-                if (retries >= NUM_RETRIES)
-                {
-                    throw new IdentificationException("Server timeout");
-                }
-                Log.d("OUT", "Identification done");
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            catch (IdentificationException e)
-            {
-                e.printStackTrace();
-            }
 
-            return result;
+                SpeakerIdentificationRestClient client = (SpeakerIdentificationRestClient) args[0];
+                String filePath = (String) args[1];
+                boolean isShort = (boolean) args[2];
+                receipt = (int) args[3];
+
+                List<UUID> ids = new ArrayList<>();
+                for (Profile profile : profiles)
+                {
+                    ids.add(profile.identificationProfileId);
+                }
+
+                IdentificationOperation result = null;
+                try
+                {
+                    OperationLocation processPollingLocation;
+                    InputStream is = new FileInputStream(filePath);
+                    processPollingLocation = client.identify(is, ids, isShort);
+                    is.close();
+
+                    int retries = 0;
+                    while (true)
+                    {
+                        result = client.checkIdentificationStatus(processPollingLocation);
+
+                        if (result.status == com.microsoft.cognitive.speakerrecognition.contract.identification.Status.SUCCEEDED)
+                        {
+                            break;
+                        } else if (result.status == com.microsoft.cognitive.speakerrecognition.contract.identification.Status.FAILED
+                                || retries >= NUM_RETRIES)
+                        {
+                            throw new IdentificationException((result.message));
+                        }
+
+                        retries++;
+                        publishProgress(retries);
+                        try
+                        {
+                            Thread.sleep(RETRY_DELAY);
+                        } catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (retries >= NUM_RETRIES)
+                    {
+                        throw new IdentificationException("Server timeout");
+                    }
+                    Log.d("OUT", "Identification done");
+                } catch (FileNotFoundException e)
+                {
+                    e.printStackTrace();
+                } catch (IOException e)
+                {
+                    e.printStackTrace();
+                } catch (IdentificationException e)
+                {
+                    e.printStackTrace();
+                }
+
+                pushNewProfile(receipt, result);
+            }
         }
 
         @Override
@@ -229,9 +304,32 @@ public class MSCogServWrapper
         }
 
         @Override
-        protected void onPostExecute(IdentificationOperation result)
+        protected void onPostExecute(Integer result)
         {
-            pushNewProfile(receipt, result);
+        }
+    }
+
+    private class DiscarderThread extends AsyncNoUpdate<Integer>
+    {
+        @Override
+        protected Integer doInBackground(Integer ... ints)
+        {
+            while (requestBehavior == RequestBehavior.DISCARD)
+            {
+                Log.d("OUT", "Discarder running...");
+                try
+                {
+                    Thread.sleep(REQUEST_INTERVAL);
+                    uploadToken.set(true);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+            uploadToken.set(true);
+
+            return 0;
         }
     }
 
@@ -261,7 +359,7 @@ public class MSCogServWrapper
         }
     }
 
-    private int getUID()
+    private synchronized int getUID()
     {
         if (uid + 1 < Integer.MAX_VALUE)
             uid++;

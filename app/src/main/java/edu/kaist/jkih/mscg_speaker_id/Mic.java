@@ -38,11 +38,13 @@ public class Mic
 
     public enum RecordingMode
     {
-        // default mode
+        /**
+         default mode
+         */
         CONTINUOUS,
-        // unit testing mode
+        /** unit testing mode */
         ONE_OFF,
-        // debug mode (save files in storage instead of using volatile cache)
+        /** debug mode (save files in storage instead of using volatile cache) */
         PERSISTENT
     }
     private RecordingMode recmode = RecordingMode.CONTINUOUS;
