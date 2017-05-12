@@ -12,7 +12,13 @@ import java.util.UUID;
 
 public class MSOutputWrapper
 {
+    public enum Result
+    {
+        Good, Bad
+    }
+
     public int receipt;
+    public Result result;
     public UUID id;
     public String alias;
     public String confidence;

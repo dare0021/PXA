@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity
     {
         Log.d("OUT", "Attempt recording");
         mic.record();
-        new RecordingProgress().execute(mic);
+        new RecordingProgress().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mic);
     }
 
     public void play(View view)
@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity
         int receipt = ms.identify(path, true);
         if (receipt >= 0)
         {
-            new WaitForUpload().execute(receipt);
+            new WaitForUpload().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, receipt);
         }
     }
 
@@ -136,12 +136,22 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(MSOutputWrapper result)
         {
+            int fg = Color.GRAY;
             // thread closed by user action
             if (result == null)
             {
                 return;
             }
-            int fg = Color.GRAY;
+            // Unfortunate issues at MS servers
+            else if (result.result != MSOutputWrapper.Result.Good || result.alias == null)
+            {
+                String outval = "";
+                outval += "receipt: " + result.receipt + "\n";
+                outval += "Message: " + result.alias + "\n";
+                ((TextView)findViewById(R.id.textview)).setText(outval);
+                ((TextView)findViewById(R.id.textview)).setTextColor(fg);
+                return;
+            }
             if (result.alias.endsWith("C"))
             {
                 fg = Color.BLUE;

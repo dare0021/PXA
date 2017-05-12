@@ -21,13 +21,16 @@ import com.microsoft.cognitive.speakerrecognition.contract.identification.Identi
 import com.microsoft.cognitive.speakerrecognition.contract.identification.OperationLocation;
 import com.microsoft.cognitive.speakerrecognition.contract.identification.Profile;
 
+import static edu.kaist.jkih.mscg_speaker_id.MSOutputWrapper.Result.Bad;
+import static edu.kaist.jkih.mscg_speaker_id.MSOutputWrapper.Result.Good;
+
 /**
  * Created by jkih on 2017-05-02.
  */
 
 public class MSCogServWrapper
 {
-    private static final int NUM_RETRIES = 10;
+    private static final int NUM_RETRIES = 0;
     // in ms
     private static final int RETRY_DELAY = 500;
 
@@ -111,12 +114,20 @@ public class MSCogServWrapper
             readyResults.remove(receipt);
             MSOutputWrapper retval = new MSOutputWrapper();
             retval.receipt = receipt;
-            retval.id = result.processingResult.identifiedProfileId;
-            retval.confidence = result.processingResult.confidence.toString();
-            retval.alias = aliases.get(retval.id);
+            if (result.processingResult != null)
+            {
+                retval.result = Good;
+                retval.id = result.processingResult.identifiedProfileId;
+                retval.confidence = result.processingResult.confidence.toString();
+                retval.alias = aliases.get(retval.id);
+            }
+            else
+            {
+                retval.alias = result.message;
+                retval.result = Bad;
+            }
             return retval;
         }
-        Log.d("ERR", "No entry for receipt " + receipt);
         return null;
     }
 
@@ -214,7 +225,8 @@ public class MSCogServWrapper
                 }
                 if (retries >= NUM_RETRIES)
                 {
-                    throw new IdentificationException("Server timeout");
+                    Log.d("ERR", "server timeout");
+//                    throw new IdentificationException("Server timeout");
                 }
                 Log.d("OUT", "Identification done");
             }

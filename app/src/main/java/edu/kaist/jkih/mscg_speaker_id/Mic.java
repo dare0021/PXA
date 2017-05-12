@@ -29,10 +29,10 @@ public class Mic
     private static final int BUFFER_SIZE = 2 * SAMPLING_RATE;
     // seconds to collect for querying. Querying done very second regardless.
     private static final int UPDATE_INTERVAL = 3;
-    // in sec. Note ms response time is 2~5 sec over LTE
+    // in sec. Note ms response time is 2~5 sec
     // note an interval greater than UPDATE_INTERVAL will lead to discarded audio data
     // MS SDK only supports one transaction at a time
-    private static final int UPLOAD_EVERY = 2;
+    private static final int UPLOAD_EVERY = 1;
 
     public boolean previewFileAvailable = false;
 
