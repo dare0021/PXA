@@ -136,7 +136,7 @@ public class MSCogServWrapper
         args[1] = filePath;
         args[2] = isShort;
         args[3] = receipt;
-        new Identify().execute(args);
+        new Identify().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, args);
         return receipt;
     }
 
