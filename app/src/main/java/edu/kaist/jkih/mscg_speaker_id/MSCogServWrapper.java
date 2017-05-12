@@ -116,6 +116,7 @@ public class MSCogServWrapper
             retval.alias = aliases.get(retval.id);
             return retval;
         }
+        Log.d("ERR", "No entry for receipt " + receipt);
         return null;
     }
 
@@ -137,8 +138,9 @@ public class MSCogServWrapper
         {
             Log.d("OUT", "Thread state: " + idThread.getStatus());
             Log.d("OUT", "Existing concurrent request. Request denied.");
-            return receipt;
+            return receipt * -1;
         }
+        Log.d("OUT", "Request accepted");
 
         Object[] args = new Object[4];
         args[0] = msWrapper;

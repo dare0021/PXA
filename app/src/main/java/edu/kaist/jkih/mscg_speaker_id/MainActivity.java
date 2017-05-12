@@ -85,7 +85,10 @@ public class MainActivity extends AppCompatActivity
     public void upload(String path)
     {
         int receipt = ms.identify(path, true);
-        new WaitForUpload().execute(receipt);
+        if (receipt >= 0)
+        {
+            new WaitForUpload().execute(receipt);
+        }
     }
 
     /**
@@ -133,6 +136,11 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(MSOutputWrapper result)
         {
+            // thread closed by user action
+            if (result == null)
+            {
+                return;
+            }
             int fg = Color.GRAY;
             if (result.alias.endsWith("C"))
             {
