@@ -136,7 +136,9 @@ public class MSCogServWrapper
         args[1] = filePath;
         args[2] = isShort;
         args[3] = receipt;
-        new Identify().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, args);
+        new Identify().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, args);
+//        MS SDK only allows 1 concurrent connection and throws an unhandled exception that kills the session otherwise
+//        new Identify().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, args);
         return receipt;
     }
 
