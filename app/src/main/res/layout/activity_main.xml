@@ -45,6 +45,13 @@
         app:layout_constraintTop_toBottomOf="@+id/button"
         app:layout_constraintLeft_toRightOf="@+id/buttonUpload1"/>
     <Button
+        android:id="@+id/buttonToggleTruthValue"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
+        android:text="Truth: Child"
+        android:onClick="toggleTruthValue"
+        app:layout_constraintTop_toBottomOf="@+id/buttonUpload1"/>
+    <Button
         android:id="@+id/buttonUpdate"
         android:layout_width="150dp"
         android:layout_height="50dp"
@@ -52,5 +59,12 @@
         android:onClick="toggleAutoUpload"
         app:layout_constraintTop_toBottomOf="@+id/buttonUpload1"
         app:layout_constraintLeft_toRightOf="@+id/buttonUpload1"/>
+    <Button
+        android:id="@+id/buttonSaveLog"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
+        android:text="Save Log"
+        android:onClick="saveLogFile"
+        app:layout_constraintTop_toBottomOf="@+id/buttonToggleTruthValue"/>
 
 </android.support.constraint.ConstraintLayout>

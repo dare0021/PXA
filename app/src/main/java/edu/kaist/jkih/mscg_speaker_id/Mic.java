@@ -93,6 +93,14 @@ public class Mic
     {
         Log.d("OUT", "saving");
         boolean retval = false;
+
+        if (!PermissionRequest.internetConnectionAvailable())
+        {
+            timeSinceUpload--;
+            Log.d("ERR", "No Internet, no save.");
+            rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
+            return retval;
+        }
         if (timeSinceUpload > 0)
         {
             timeSinceUpload--;
@@ -157,33 +165,29 @@ public class Mic
         header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
         header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
 
-
-        if (PermissionRequest.internetConnectionAvailable())
+        retval = true;
+        FileOutputStream fos;
+        try
         {
-            retval = true;
-            FileOutputStream fos;
-            try
-            {
-                // what if overwrite is literally that and doesn't delete the previous file first?
-                // the file size will be the same anyway since this is uncompressed
-                // also, what if network is slow?
+            // what if overwrite is literally that and doesn't delete the previous file first?
+            // the file size will be the same anyway since this is uncompressed
+            // also, what if network is slow?
 
-                String path = dir + "/" + fileName;
-                fos = new FileOutputStream(path, false);
-                Log.d("OUT", "File output to " + path);
-                fos.write(header, 0, 44);
-                Log.d("OUT", "write from cell " + rec_buff_head);
-                fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
-                fos.close();
-                latestFile = path;
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-                retval = false;
-            }
-            // upload head
+            String path = dir + "/" + fileName;
+            fos = new FileOutputStream(path, false);
+            Log.d("OUT", "File output to " + path);
+            fos.write(header, 0, 44);
+            Log.d("OUT", "write from cell " + rec_buff_head);
+            fos.write(rec_buff[rec_buff_head], 0, totalAudioLen);
+            fos.close();
+            latestFile = path;
         }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            retval = false;
+        }
+        // upload head
         // pop head and push empty (conceptually)
         rec_buff_head = (rec_buff_head + 1) % UPDATE_INTERVAL;
         return retval;

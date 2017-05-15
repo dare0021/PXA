@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity
     Mic mic = null;
     AudioPlayer ap = null;
     MSCogServWrapper ms = null;
+    TestStats ts = new TestStats();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +110,26 @@ public class MainActivity extends AppCompatActivity
     {
         uploadFiles = !uploadFiles;
         Toast.makeText(this, "uploadFiles = " + uploadFiles, Toast.LENGTH_SHORT).show();
+    }
+
+    public void toggleTruthValue(View view)
+    {
+        ts.truthIsChild = !ts.truthIsChild;
+        String truth = "Truth: ";
+        if (ts.truthIsChild)
+        {
+            truth += "Child";
+        }
+        else
+        {
+            truth += "Adult";
+        }
+        ((Button)view).setText(truth);
+    }
+
+    public void saveLogFile(View view)
+    {
+        ts.saveLog(getExternalStorageDirectory().toString() + "/mscogserv/teststats.log");
     }
 
     private class WaitForUpload extends AsyncTask<Integer, Integer, MSOutputWrapper>
