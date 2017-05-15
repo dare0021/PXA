@@ -58,16 +58,29 @@ public class TestStats
             default:
                 throw new AssertionError("Not Implemented");
         }
+        switch (truth)
+        {
+            case Child:
+                totalTruthChild += 1;
+                break;
+            case Adult:
+                totalTruthAdult += 1;
+                break;
+            case Neither:
+                // fall through
+            default:
+                throw new AssertionError("Not Implemented");
+        }
 
         if (truth == result)
         {
             if (truth == Child)
             {
-                totalTruthChild += 1;
+                correctChild += 1;
             }
             else if (truth == Adult)
             {
-                totalTruthAdult += 1;
+                correctAdult += 1;
             }
             else
             {
