@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+import static edu.kaist.jkih.mscg_speaker_id.TestStats.Result.Adult;
+import static edu.kaist.jkih.mscg_speaker_id.TestStats.Result.Child;
+
 /**
  * Counter for tests
  *
@@ -25,30 +28,51 @@ public class TestStats
     private int totalDetectNeither = 0;
     private int totalDetectAdult = 0;
 
+    public enum Result
+    {
+        Child, Adult, Neither
+    }
+
     public TestStats()
     {
 
     }
 
-    public float addEntry(boolean isChild)
+    public float addEntry(Result result)
     {
         total += 1;
-        if (isChild)
+
+        Result truth = truthIsChild ? Child : Adult;
+
+        switch (result)
         {
-            totalDetectChild += 1;
-        }
-        else
-        {
-            totalDetectAdult += 1;
+            case Child:
+                totalDetectChild += 1;
+                break;
+            case Adult:
+                totalDetectAdult += 1;
+                break;
+            case Neither:
+                totalDetectNeither += 1;
+                break;
+            default:
+                throw new AssertionError("Not Implemented");
         }
 
-        if (truthIsChild)
+        if (truth == result)
         {
-            totalTruthChild += 1;
-        }
-        else
-        {
-            totalTruthAdult += 1;
+            if (truth == Child)
+            {
+                totalTruthChild += 1;
+            }
+            else if (truth == Adult)
+            {
+                totalTruthAdult += 1;
+            }
+            else
+            {
+                throw new AssertionError("Not Implemented");
+            }
         }
 
         return getTotalAccuracy();
@@ -77,6 +101,8 @@ public class TestStats
         retval += "totalDetectChild : " + totalDetectChild + "\n";
         retval += "totalDetectNeither : " + totalDetectNeither + "\n";
         retval += "totalDetectAdult : " + totalDetectAdult + "\n";
+        retval += "accuracy : " + getTotalAccuracy() + "\n";
+        retval += "accuracy sans neither : " + getTotalAccuracyIgnoreNeither() + "\n";
         return retval;
     }
 

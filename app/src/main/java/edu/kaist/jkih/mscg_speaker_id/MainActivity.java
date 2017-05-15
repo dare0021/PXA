@@ -163,9 +163,11 @@ public class MainActivity extends AppCompatActivity
             {
                 return;
             }
-            // Unfortunate issues at MS servers
+            // Failure to ID on MS side
             else if (result.result != MSOutputWrapper.Result.Good || result.alias == null)
             {
+                ts.addEntry(TestStats.Result.Neither);
+
                 String outval = "";
                 outval += "receipt: " + result.receipt + "\n";
                 outval += "Message: " + result.alias + "\n";
@@ -175,10 +177,12 @@ public class MainActivity extends AppCompatActivity
             }
             if (result.alias.endsWith("C"))
             {
+                ts.addEntry(TestStats.Result.Child);
                 fg = Color.BLUE;
             }
             else if (result.alias.endsWith("M"))
             {
+                ts.addEntry(TestStats.Result.Adult);
                 fg = Color.RED;
             }
             String outval = "";
