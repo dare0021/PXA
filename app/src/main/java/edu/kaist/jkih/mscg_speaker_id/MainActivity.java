@@ -1,9 +1,7 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,7 +24,7 @@ public class MainActivity extends AppCompatActivity
     Mic mic = null;
     AudioPlayer ap = null;
     MSCogServWrapper ms = null;
-    TestStats ts = new TestStats();
+    TestStats ts = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +35,7 @@ public class MainActivity extends AppCompatActivity
         ap = new AudioPlayer(this.getApplicationContext());
         ms = new MSCogServWrapper(getExternalStorageDirectory().toString() + getString(R.string.apikey_file),
                                     getExternalStorageDirectory().toString() + getString(R.string.alias_file));
+        resetStats(null);
     }
 
     /** <pre>
@@ -135,6 +134,15 @@ public class MainActivity extends AppCompatActivity
     public void saveLogFile(View view)
     {
         ts.saveLog(getExternalStorageDirectory().toString() + "/mscogserv/teststats.log");
+    }
+
+    /**
+     * Constructor calls resetStats(null)
+     * Rewrite if the code begins using the view argument
+     */
+    public void resetStats(View view)
+    {
+        ts = new TestStats();
     }
 
     private class WaitForUpload extends AsyncTask<Integer, Integer, MSOutputWrapper>
