@@ -1,11 +1,14 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity
     public void record()
     {
         Log.d("OUT", "Attempt recording");
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mic.record();
         new RecordingProgress().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mic);
     }
@@ -79,6 +83,7 @@ public class MainActivity extends AppCompatActivity
 
     public void stop()
     {
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mic.stop();
         ((Button)findViewById(R.id.button)).setText("● REC");
     }
