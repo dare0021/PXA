@@ -33,9 +33,9 @@ public class TestStats
         Child, Adult, Neither
     }
 
-    public TestStats()
+    public TestStats(boolean groundTruthIsChild)
     {
-
+        truthIsChild = groundTruthIsChild;
     }
 
     public float addEntry(Result result)

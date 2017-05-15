@@ -142,7 +142,12 @@ public class MainActivity extends AppCompatActivity
      */
     public void resetStats(View view)
     {
-        ts = new TestStats();
+        boolean groundTruthIsChild = true;
+        if (ts != null)
+        {
+            groundTruthIsChild = ts.truthIsChild;
+        }
+        ts = new TestStats(groundTruthIsChild);
     }
 
     private class WaitForUpload extends AsyncTask<Integer, Integer, MSOutputWrapper>
