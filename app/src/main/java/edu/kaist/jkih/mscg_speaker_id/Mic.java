@@ -24,7 +24,6 @@ public class Mic
     // requires manual update of WAV header since AudioFormat enums do not coincide with representative numbers. e.g. single channel is enum 16
     private static final int CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int SOURCE = MediaRecorder.AudioSource.MIC;
     // 16 bits is 1 channel * 2 bytes * sampling rate * 1 second per update max acceptable latency
     private static final int BUFFER_SIZE = 2 * SAMPLING_RATE;
     // seconds to collect for querying. Querying done very second regardless.
@@ -35,6 +34,7 @@ public class Mic
     private static final int UPLOAD_EVERY = 1;
 
     public boolean previewFileAvailable = false;
+    public int audioSource;
 
     public enum RecordingMode
     {
@@ -45,7 +45,7 @@ public class Mic
         // debug mode (save files in storage instead of using volatile cache)
         PERSISTENT
     }
-    private RecordingMode recmode = RecordingMode.CONTINUOUS;
+    private RecordingMode recmode = RecordingMode.PERSISTENT;
 
     private RecordingThread thread = null;
     private boolean recording = false;
@@ -223,7 +223,7 @@ public class Mic
 
         public RecordingThread()
         {
-            this.rec = new AudioRecord(SOURCE, SAMPLING_RATE, CHANNELS, ENCODING, BUFFER_SIZE);
+            this.rec = new AudioRecord(audioSource, SAMPLING_RATE, CHANNELS, ENCODING, BUFFER_SIZE);
         }
 
         @Override

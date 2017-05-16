@@ -1,13 +1,16 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
 import android.graphics.Color;
+import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +39,43 @@ public class MainActivity extends AppCompatActivity
         ms = new MSCogServWrapper(getExternalStorageDirectory().toString() + getString(R.string.apikey_file),
                                     getExternalStorageDirectory().toString() + getString(R.string.alias_file));
         resetStats(null);
+
+        Spinner spnAS = (Spinner)findViewById(R.id.spinnerAS);
+
+        spnAS.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            /**
+             * Called when a new item is selected (in the Spinner)
+             */
+            public void onItemSelected(AdapterView<?> parent, View view,
+                                       int pos, long id) {
+                switch ((String)parent.getItemAtPosition(pos))
+                {
+                    case "MIC":
+                        mic.audioSource = MediaRecorder.AudioSource.MIC;
+                        break;
+                    case "CAM":
+                        mic.audioSource = MediaRecorder.AudioSource.CAMCORDER;
+                        break;
+                    case "Default":
+                        mic.audioSource = MediaRecorder.AudioSource.DEFAULT;
+                        break;
+                    case "Voice Call":
+                        mic.audioSource = MediaRecorder.AudioSource.VOICE_COMMUNICATION;
+                        break;
+                    case "Voice Command":
+                        mic.audioSource = MediaRecorder.AudioSource.VOICE_RECOGNITION;
+                        break;
+                    default:
+                        throw new AssertionError("Not Implemented.");
+                }
+                Toast.makeText(MainActivity.this, "AudioSource for next recording session is " + parent.getItemAtPosition(pos) , Toast.LENGTH_SHORT).show();
+            }
+
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing, just another required interface callback
+            }
+
+        }); // (optional)
     }
 
     /** <pre>
@@ -136,10 +176,10 @@ public class MainActivity extends AppCompatActivity
         ts.saveLog(getExternalStorageDirectory().toString() + "/mscogserv/teststats.log");
     }
 
-    /**
-     * Constructor calls resetStats(null)
-     * Rewrite if the code begins using the view argument
-     */
+/**
+ * Constructor calls resetStats(null)
+ * Rewrite if the code begins using the view argument
+ */
     public void resetStats(View view)
     {
         boolean groundTruthIsChild = true;

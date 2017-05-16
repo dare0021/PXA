@@ -4,4 +4,12 @@
     <string name="rectemp_preview">rec_preview</string>
     <string name="apikey_file">/mscogserv/mscogservkey.txt</string>
     <string name="alias_file">/mscogserv/speakerAliases.txt</string>
+
+    <string-array name="audio_source_modes">
+        <item>MIC</item>
+        <item>CAM</item>
+        <item>Default</item>
+        <item>Voice Call</item>
+        <item>Voice Command</item>
+    </string-array>
 </resources>
