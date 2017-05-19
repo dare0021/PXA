@@ -1,7 +1,5 @@
 package edu.kaist.jkih.mscg_speaker_id;
 
-import com.microsoft.cognitive.speakerrecognition.contract.Confidence;
-
 import java.util.UUID;
 
 /**

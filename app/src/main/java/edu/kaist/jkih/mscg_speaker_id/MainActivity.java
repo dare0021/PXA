@@ -37,7 +37,8 @@ public class MainActivity extends AppCompatActivity
         mic = new Mic(this);
         ap = new AudioPlayer(this.getApplicationContext());
         ms = new MSCogServWrapper(getExternalStorageDirectory().toString() + getString(R.string.apikey_file),
-                                    getExternalStorageDirectory().toString() + getString(R.string.alias_file));
+                                    getExternalStorageDirectory().toString() + getString(R.string.alias_file),
+                                    this);
         resetStats(null);
 
         Spinner spnAS = (Spinner)findViewById(R.id.spinnerAS);
