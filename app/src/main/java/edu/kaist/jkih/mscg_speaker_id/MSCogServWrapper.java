@@ -16,6 +16,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -28,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static android.R.attr.id;
 
 /**
  * Created by jkih on 2017-05-02.
@@ -42,6 +45,7 @@ public class MSCogServWrapper
 
     private int uid = 0;
     private HashMap<UUID, String> aliases = new HashMap<>();
+    private List<UUID> serversideProfiles = new ArrayList<>();
     private String apikey;
     private RequestQueue volleyQueue;
     private List<JsonRequest> requests = new ArrayList<>();
@@ -122,7 +126,19 @@ public class MSCogServWrapper
                 {
                     return;
                 }
-                Log.d("WGET", re.toString());
+                try
+                {
+                    JSONArray profiles = re.getJSONArray("results");
+                    JSONObject iter;
+                    for (int i=0; i < profiles.length(); i++)
+                    {
+                        iter = profiles.getJSONObject(i);
+                        serversideProfiles.add(UUID.fromString(iter.getString("identificationProfileId")));
+                    }
+                } catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
                 ready = true;
             }
         });
@@ -140,5 +156,13 @@ public class MSCogServWrapper
     {
         // attempt to get the result for item with receipt %receipt
         return null;
+    }
+
+    public void test()
+    {
+        for (UUID id : serversideProfiles)
+        {
+            Log.d("OUT", id.toString());
+        }
     }
 }

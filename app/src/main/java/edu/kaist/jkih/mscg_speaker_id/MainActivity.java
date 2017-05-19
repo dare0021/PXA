@@ -143,7 +143,10 @@ public class MainActivity extends AppCompatActivity
     public void uploadTest(View view)
     {
         if (view.getId() == R.id.buttonUpload1)
-            upload(getExternalStorageDirectory() + "/test1.wav");
+        {
+            ms.test();
+//            upload(getExternalStorageDirectory() + "/test1.wav");
+        }
         else if (view.getId() == R.id.buttonUpload2)
             upload(getExternalStorageDirectory() + "/test2.wav");
     }
