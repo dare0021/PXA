@@ -38,11 +38,6 @@ import static android.R.attr.id;
 
 public class MSCogServWrapper
 {
-    private static final int NUM_RETRIES = 5;
-    // in ms
-    private static final int RETRY_DELAY = 100;
-    private static final int INITIAL_DELAY = 1000;
-
     private int uid = 0;
     private HashMap<UUID, String> aliases = new HashMap<>();
     private List<UUID> serversideProfiles = new ArrayList<>();
@@ -148,7 +143,9 @@ public class MSCogServWrapper
 
     public int identify(String path, boolean minimumLengthOverride)
     {
-        // request speaker ID using file from %path%
+        // make request
+        // if successful return a receipt
+        // if not, return -1
         return 0;
     }
 

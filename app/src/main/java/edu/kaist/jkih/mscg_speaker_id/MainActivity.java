@@ -18,6 +18,7 @@ import static android.os.Environment.getExternalStorageDirectory;
 
 public class MainActivity extends AppCompatActivity
 {
+    private static final int INITIAL_DELAY = 1000;
     // how often to check if net io is finished. In ms.
     private static final int UPLOAD_CHECK_INTERVAL = 50;
 
@@ -201,6 +202,14 @@ public class MainActivity extends AppCompatActivity
         {
             int receipt = ints[0];
             MSOutputWrapper result = null;
+            try
+            {
+                Thread.sleep(INITIAL_DELAY);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
             while (result == null)
             {
                 try
