@@ -24,13 +24,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static android.R.attr.id;
 
 /**
  * Created by jkih on 2017-05-02.
@@ -43,7 +42,7 @@ public class MSCogServWrapper
     private List<UUID> serversideProfiles = new ArrayList<>();
     private String apikey;
     private RequestQueue volleyQueue;
-    private List<JsonRequest> requests = new ArrayList<>();
+    private ArrayList<MSOutputWrapper> requests = new ArrayList<>();
     private boolean ready = false;
 
     public MSCogServWrapper(String apikeyPath, String aliasPath, Context context)
@@ -106,7 +105,7 @@ public class MSCogServWrapper
         return uid;
     }
 
-    public void GetAllProfiles()
+    private void GetAllProfiles()
     {
         String url = "https://westus.api.cognitive.microsoft.com/spid/v1.0/identificationProfiles";
         String keyHeader = "Ocp-Apim-Subscription-Key";
@@ -141,12 +140,76 @@ public class MSCogServWrapper
         volleyQueue.add(req);
     }
 
+    private int Identification(String path, boolean minimumLengthOverride)
+    {
+        String url = "https://westus.api.cognitive.microsoft.com/spid/v1.0/identify";
+        String keyHeader = "Ocp-Apim-Subscription-Key";
+        Map<String, String> header = new HashMap<>();
+        Map<String, String> params = new HashMap<>();
+        // use this
+        header.put(keyHeader, apikey);
+        final int id = getUID();
+        try
+        {
+            InputStream is = new FileInputStream(path);
+            // get a byte array or sth
+        }
+        catch (FileNotFoundException e)
+        {
+            Log.d("ERR", "Cannot find file to ID: " + path);
+            e.printStackTrace();
+        }
+        HeadierRequest req = new HeadierRequest(Request.Method.POST, url, header, params, new Response.Listener<JSONObject>()
+        {
+            @Override
+            public void onResponse(JSONObject re)
+            {
+                if (re == null)
+                {
+                    return;
+                }
+                try
+                {
+                    int response = re.getInt("responseCode");
+                    if (response == 202)
+                    {
+                        getRequest(id).result = MSOutputWrapper.Result.Processing;
+                    }
+                    else
+                    {
+                        getRequest(id).result = MSOutputWrapper.Result.Bad;
+                    }
+                } catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
+        volleyQueue.add(req);
+        MSOutputWrapper output = new MSOutputWrapper(id);
+        output.result = MSOutputWrapper.Result.Waiting;
+        requests.add(output);
+        return id;
+    }
+
+    public MSOutputWrapper getRequest(int receipt)
+    {
+        for (MSOutputWrapper output : requests)
+        {
+            if (output.getReceipt() == receipt)
+                return output;
+        }
+        return null;
+    }
+
     public int identify(String path, boolean minimumLengthOverride)
     {
-        // make request
-        // if successful return a receipt
-        // if not, return -1
-        return 0;
+        if (!ready)
+        {
+            Log.d("ERR", "Class not initialized yet");
+            return -1;
+        }
+        return Identification(path, minimumLengthOverride);
     }
 
     public MSOutputWrapper getProfile(int receipt)

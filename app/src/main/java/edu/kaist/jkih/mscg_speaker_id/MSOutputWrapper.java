@@ -10,12 +10,22 @@ import java.util.UUID;
 
 public class MSOutputWrapper
 {
-    public enum Result
+    public MSOutputWrapper(int receipt)
     {
-        Good, Bad
+        this.receipt = receipt;
     }
 
-    public int receipt;
+    public enum Result
+    {
+        Good, Bad, Waiting, Processing
+    }
+
+    public int getReceipt()
+    {
+        return receipt;
+    }
+
+    private int receipt;
     public Result result;
     public UUID id;
     public String alias;
