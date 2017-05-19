@@ -45,7 +45,7 @@ public class Mic
         // debug mode (save files in storage instead of using volatile cache)
         PERSISTENT
     }
-    private RecordingMode recmode = RecordingMode.PERSISTENT;
+    private RecordingMode recmode = RecordingMode.CONTINUOUS;
 
     private RecordingThread thread = null;
     private boolean recording = false;

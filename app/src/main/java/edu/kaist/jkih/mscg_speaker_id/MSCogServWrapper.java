@@ -131,7 +131,7 @@ public class MSCogServWrapper
         return null;
     }
 
-    private synchronized void pushNewProfile(int receipt, IdentificationOperation profile)
+    private synchronized void pushNewResult(int receipt, IdentificationOperation profile)
     {
         readyResults.put(receipt, profile);
     }
@@ -256,7 +256,7 @@ public class MSCogServWrapper
         @Override
         protected void onPostExecute(IdentificationOperation result)
         {
-            pushNewProfile(receipt, result);
+            pushNewResult(receipt, result);
         }
     }
 
